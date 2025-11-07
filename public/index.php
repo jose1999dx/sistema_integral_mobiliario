@@ -41,7 +41,7 @@ spl_autoload_register(function($className) {
         // Modelos base y por módulos
         APP_PATH . '/models/' . $className . '.php',
         APP_PATH . '/models/recursos_humanos/' . $className . '.php',
-        APP_PATH . '/models/presupuesto/' . $className . '.php',
+        APP_PATH . '/models/Presupuesto/' . $className . '.php',
         APP_PATH . '/models/ingenieria/' . $className . '.php',
         APP_PATH . '/models/proyectos/' . $className . '.php',
         APP_PATH . '/models/calidad/' . $className . '.php',
@@ -62,7 +62,7 @@ spl_autoload_register(function($className) {
         APP_PATH . '/controllers/' . $className . '.php',
         APP_PATH . '/controllers/auth/' . $className . '.php',
         APP_PATH . '/controllers/recursos_humanos/' . $className . '.php',
-        APP_PATH . '/controllers/presupuesto/' . $className . '.php',
+        APP_PATH . '/controllers/Presupuesto/' . $className . '.php',
         APP_PATH . '/controllers/ingenieria/' . $className . '.php',
         APP_PATH . '/controllers/proyectos/' . $className . '.php',
         APP_PATH . '/controllers/calidad/' . $className . '.php',
@@ -70,7 +70,7 @@ spl_autoload_register(function($className) {
         APP_PATH . '/controllers/produccion_madera/' . $className . '.php',
         APP_PATH . '/controllers/produccion_metal/' . $className . '.php',
         APP_PATH . '/controllers/compras/' . $className . '.php',
-        APP_PATH . '/controllers/transportes/' . $className . '.php',
+        APP_PATH . '/controllers/transportes/' .  $className . '.php',
         APP_PATH . '/controllers/residencias/' . $className . '.php',
         APP_PATH . '/controllers/almacen/' . $className . '.php',
         APP_PATH . '/controllers/mantenimiento/' . $className . '.php',
@@ -315,7 +315,8 @@ try {
         'rh/empleados/guardar' => [
             'controller' => 'EmpleadoController',
             'method' => 'guardar',
-            'auth' => true
+            'auth' => true,
+            'post_method' => 'guardar' 
         ],
         'rh/empleados/editar/(\d+)' => [
             'controller' => 'EmpleadoController',
@@ -331,21 +332,102 @@ try {
             'controller' => 'EmpleadoController',
             'method' => 'eliminar',
             'auth' => true
-        ]
+        ],
+
+        // ========== PRESUPUESTO ==========
+        'presupuesto/index' => [
+            'controller' => 'PresupuestoController',
+            'method' => 'index',
+            'auth' => true
+        ],
+        'presupuesto/crear' => [
+            'controller' => 'PresupuestoController',
+            'method' => 'crear',
+            'auth' => true,
+        ],
+        // RUTA DE DETALLE AÑADIDA
+        'presupuesto/detalle/(\d+)' => [
+            'controller' => 'PresupuestoController',
+            'method' => 'detalle', // Llama al nuevo método 'detalle'
+            'auth' => true,
+        ],
+        // ✅ RUTA CORREGIDA: Esto asegura que el método 'guardar' se llama solo en POST
+        'presupuesto/guardar' => [
+            'controller' => 'PresupuestoController',
+            'method' => 'crear', // Método para GET (si se llegara)
+            'auth' => true,
+            'post_method' => 'guardar' // <--- USA ESTE MÉTODO EN PETICIONES POST
+        ],
+        'presupuesto/gastos-reales' => [
+            'controller' => 'PresupuestoController',
+            'method' => 'gastosReales',
+            'auth' => true
+        ],
+        // Rutas de acción (Aprobar / Rechazar)
+        'presupuesto/aprobar/(\d+)' => [
+            'controller' => 'PresupuestoController',
+            'method' => 'aprobar',
+            'auth' => true,
+        ],
+        'presupuesto/rechazar/(\d+)' => [
+            'controller' => 'PresupuestoController',
+            'method' => 'rechazar',
+            'auth' => true,
+        ],
+
+        // Agregar estas rutas en la sección de PRESUPUESTO:
+
+'presupuesto/editar/(\d+)' => [
+    'controller' => 'PresupuestoController',
+    'method' => 'editar',
+    'auth' => true
+],
+// ✅ RUTA PARA ACTUALIZAR PRESUPUESTO (POST)
+'presupuesto/actualizar' => [
+    'controller' => 'PresupuestoController',
+    'method' => 'actualizar',
+    'auth' => true,
+    'post_method' => 'actualizar'
+],
+
+// ✅ RUTA PARA GUARDAR GASTO REAL (POST)  
+'presupuesto/guardarGastoReal' => [
+    'controller' => 'PresupuestoController',
+    'method' => 'guardarGastoReal',
+    'auth' => true,
+    'post_method' => 'guardarGastoReal'
+],
+
+// ✅ RUTA PARA CANCELAR (GET - debe redirigir al detalle)
+'presupuesto/detalle/(\d+)' => [
+    'controller' => 'PresupuestoController',
+    'method' => 'detalle',
+    'auth' => true
+],
+'presupuesto/gastosReales/(\d+)' => [
+    'controller' => 'PresupuestoController', 
+    'method' => 'gastosReales',
+    'auth' => true
+],
+
+        
     ];
+    
 
     // VERIFICAR SI LA RUTA EXISTE
     $routeFound = false;
     $routeParams = [];
+    $routePatternMatched = ''; // Para guardar el patrón que hizo match
     
     foreach ($routes as $routePattern => $routeConfig) {
         // Convertir patrón a regex para parámetros
-        $pattern = str_replace('/', '\/', $routePattern);
-        $pattern = preg_replace('/\(\\\\d\+\)/', '(\d+)', $pattern);
+        $pattern = str_replace('/', '\/', $routePattern); 
+        $pattern = preg_replace('/\\\\\(\d\+\)/', '(\d+)', $pattern); 
         $pattern = "/^{$pattern}$/";
         
         if (preg_match($pattern, $currentRoute, $matches)) {
             $routeFound = true;
+            $routePatternMatched = $routePattern; // Guardamos el patrón original
             array_shift($matches); // Remover el match completo
             $routeParams = $matches;
             break;
@@ -353,7 +435,7 @@ try {
     }
     
     if ($routeFound) {
-        $route = $routes[$routePattern];
+        $route = $routes[$routePatternMatched]; // Usamos el patrón guardado
         
         // Verificar autenticación si es requerida
         if ($route['auth'] && !Auth::check()) {
@@ -368,11 +450,16 @@ try {
         
         // Determinar la carpeta del controlador
         $controllerFolder = '';
-        if (strpos($routePattern, 'rh/') === 0) {
+        if (strpos($routePatternMatched, 'rh/') === 0) {
             $controllerFolder = 'recursos_humanos/';
-        } elseif ($routePattern === 'login' || $routePattern === 'logout' || $routePattern === 'acceso-denegado') {
+        } 
+        // 🚀 LÓGICA DE DETECCIÓN DE CARPETA MEJORADA
+        elseif (strpos($routePatternMatched, 'presupuesto/') === 0) {
+            // Aseguramos que la carpeta es 'Presupuesto/' (con P mayúscula)
+            $controllerFolder = 'Presupuesto/'; 
+        } elseif ($routePatternMatched === 'login' || $routePatternMatched === 'logout' || $routePatternMatched === 'acceso-denegado') {
             $controllerFolder = 'auth/';
-        } elseif ($routePattern === 'dashboard') {
+        } elseif ($routePatternMatched === 'dashboard') {
             $controllerFolder = 'direccion/';
         }
         
@@ -382,7 +469,7 @@ try {
         
         // Verificar si el archivo del controlador existe
         if (!file_exists($controllerFile)) {
-            throw new Exception("Controlador no encontrado: {$controllerFile}");
+            throw new Exception("Controlador no encontrado: {$controllerFile} (Buscado en carpeta: {$controllerFolder})");
         }
         
         // Cargar y ejecutar el controlador
@@ -395,7 +482,7 @@ try {
         $controller = new $controllerClass();
         
         if (!method_exists($controller, $method)) {
-            throw new Exception("Método {$method} no existe en {$controllerClass}");
+            throw new Exception("Método **{$method}** no existe en **{$controllerClass}**");
         }
         
         // Llamar al método con parámetros si los hay
@@ -473,7 +560,7 @@ try {
                     <strong>🔧 Información de Debug:</strong><br>
                     <strong>URL solicitada:</strong> <?= htmlspecialchars($requestUri) ?><br>
                     <strong>Ruta procesada:</strong> <?= htmlspecialchars($currentRoute) ?><br>
-                    <strong>Script:</strong> <?= htmlspecialchars($scriptName) ?><br>
+                    <strong>Script:</strong> <?= htmlspecialchars($_SERVER['SCRIPT_NAME']) ?><br>
                     <strong>Método:</strong> <?= htmlspecialchars($_SERVER['REQUEST_METHOD']) ?>
                 </div>
                 <?php endif; ?>
@@ -517,6 +604,7 @@ try {
             }
             .error-icon { font-size: 4rem; margin-bottom: 1rem; }
             h1 { font-size: 2.5rem; margin-bottom: 1rem; }
+            p { word-break: break-all; }
             .btn {
                 display: inline-block;
                 padding: 12px 25px;

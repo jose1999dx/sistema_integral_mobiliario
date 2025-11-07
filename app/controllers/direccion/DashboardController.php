@@ -256,6 +256,7 @@ class DashboardController {
                     <li><a href="#">🏭 Producción</a></li>
                     <li><a href="#">📦 Inventario</a></li>
                     <li><a href="#">💰 Ventas</a></li>
+                  <li><a href="<?= $data['base_url'] ?>/index.php?url=presupuesto/index">📊 Presupuesto</a></li>
                     <li><a href="<?= $data['base_url'] ?>/index.php?url=logout" class="logout">🚪 Cerrar Sesión</a></li>
                 </ul>
             </nav>
