@@ -24,31 +24,37 @@ class PresupuestoController {
         view('presupuesto/listar', $data);
     }
 
-    public function detalle($id = null) {
-        // Validación básica del ID
-        if ($id === null || !is_numeric($id) || (int)$id <= 0) {
-            $this->setSessionMessage('error', 'ID de presupuesto inválido o no especificado.');
-            $this->redirect('presupuesto/index');
-            return;
-        }
-
-        $presupuesto = $this->model->getPresupuestoDetalle((int)$id);
-
-        if ($presupuesto) {
-            // Presupuesto encontrado, cargamos la vista de detalle
-            $data = [
-                'titulo' => 'Detalle del Presupuesto: ' . $presupuesto['nombre'],
-                'presupuesto' => $presupuesto,
-                'proyectos' => $this->model->getProyectos(), // Útil por si se necesita información del proyecto
-            ];
-            view('presupuesto/detalle', $data);
-        } else {
-            // Presupuesto no encontrado
-            $this->setSessionMessage('error', 'El presupuesto solicitado no existe.');
-            $this->redirect('presupuesto/index');
-        }
+   public function detalle($id = null) {
+    // Validación básica del ID
+    if ($id === null || !is_numeric($id) || (int)$id <= 0) {
+        $this->setSessionMessage('error', 'ID de presupuesto inválido o no especificado.');
+        $this->redirect('presupuesto/index');
+        return;
     }
-    
+
+    $presupuesto = $this->model->getPresupuestoDetalle((int)$id);
+
+    if ($presupuesto) {
+        // ✅ NUEVO: Obtener análisis de desviaciones
+        $analisis_desviaciones = $this->model->analizarDesviaciones((int)$id);
+        $analisis_variaciones = $this->model->analizarVariacionesPorItem((int)$id);
+         $proyecciones = $this->model->calcularProyecciones((int)$id);
+        
+        // Presupuesto encontrado, cargamos la vista de detalle
+        $data = [
+            'titulo' => 'Detalle del Presupuesto: ' . $presupuesto['nombre'],
+            'presupuesto' => $presupuesto,
+            'proyectos' => $this->model->getProyectos(), // Útil por si se necesita información del proyecto
+            'analisis_desviaciones' => $analisis_desviaciones, // ← Nuevo dato agregado
+            'proyecciones' => $proyecciones
+        ];
+        view('presupuesto/detalle', $data);
+    } else {
+        // Presupuesto no encontrado
+        $this->setSessionMessage('error', 'El presupuesto solicitado no existe.');
+        $this->redirect('presupuesto/index');
+    }
+}
     // --- MODIFICACIÓN DE MÉTODO ---
     /**
      * Muestra el formulario vacío para crear un presupuesto.
