@@ -409,6 +409,23 @@ try {
     'method' => 'gastosReales',
     'auth' => true
 ],
+'presupuesto/rentabilidad' => [
+    'controller' => 'PresupuestoController',
+    'method' => 'rentabilidad',
+    'auth' => true
+],
+
+'presupuesto/rentabilidad-proyecto/(\d+)' => [
+    'controller' => 'PresupuestoController',
+    'method' => 'rentabilidadProyecto',
+    'auth' => true
+],
+
+'presupuesto/generar-reporte/(\d+)' => [
+    'controller' => 'PresupuestoController',
+    'method' => 'generarReportePDF',
+    'auth' => true
+],
 
         
     ];
